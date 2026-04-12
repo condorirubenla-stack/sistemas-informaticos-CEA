@@ -290,10 +290,9 @@
         <div
             style="background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:1rem;">
             <div class="form-row">
-                <input id="prof-nombre" placeholder="Nombre" />
-                <input id="prof-apellido" placeholder="Apellido" />
-                <input id="prof-email" placeholder="Email" type="email" />
-                <input id="prof-password" placeholder="Contraseña" type="password" />
+                <input id="prof-nombre" placeholder="Nombre *" />
+                <input id="prof-apellido" placeholder="Apellido *" />
+                <input id="prof-ci" placeholder="Carnet (Contraseña) *" />
                 <select id="prof-nivel">
                     <option value="Técnico Básico">Técnico Básico</option>
                     <option value="Técnico Auxiliar">Técnico Auxiliar</option>
@@ -317,8 +316,7 @@
             <div class="form-row">
                 <input id="est-nombre" placeholder="Nombre *" />
                 <input id="est-apellido" placeholder="Apellido *" />
-                <input id="est-email" placeholder="Correo institucional *" type="email" />
-                <input id="est-password" placeholder="Contraseña inicial *" type="password" />
+                <input id="est-ci" placeholder="Carnet (Contraseña) *" />
                 <select id="est-nivel">
                     <option value="Técnico Básico">Técnico Básico</option>
                     <option value="Técnico Auxiliar">Técnico Auxiliar</option>
@@ -482,20 +480,40 @@
             }
 
             async function crearProfesor() {
-                const data = {
-                    nombre: document.getElementById('prof-nombre').value,
-                    apellido: document.getElementById('prof-apellido').value,
-                    email: document.getElementById('prof-email').value,
-                    password: document.getElementById('prof-password').value,
-                    nivel_asignado: document.getElementById('prof-nivel').value,
-                };
-                if (!data.nombre || !data.email || !data.password) { alert('Completa todos los campos.'); return; }
-                const r = await fetch(`${API_URL}/auth/register-profesor?nombre=${encodeURIComponent(data.nombre)}&apellido=${encodeURIComponent(data.apellido)}&email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}&nivel_asignado=${encodeURIComponent(data.nivel_asignado)}`, {
+                const nombre = document.getElementById('prof-nombre').value.trim();
+                const apellido = document.getElementById('prof-apellido').value.trim();
+                const ci = document.getElementById('prof-ci').value.trim();
+                const nivel_asignado = document.getElementById('prof-nivel').value;
+
+                if (!nombre || !apellido || !ci) { alert('Completa nombre, apellido y carnet.'); return; }
+
+                const email = `${nombre.toLowerCase()}.${apellido.toLowerCase()}@educonnect.com`.replace(/\s+/g, '');
+                const password = ci;
+
+                const r = await fetch(`${API_URL}/auth/register-profesor?nombre=${encodeURIComponent(nombre)}&apellido=${encodeURIComponent(apellido)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&nivel_asignado=${encodeURIComponent(nivel_asignado)}`, {
                     method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
                 });
                 const d = await r.json();
-                if (r.ok) { alert(`✅ ${d.mensaje}`); cargarProfesores(); }
-                else alert(`❌ ${d.detail}`);
+                if (r.ok) {
+                    alert(`✅ ${d.mensaje}\n✉️ Email generado: ${email}`);
+                    ['prof-nombre', 'prof-apellido', 'prof-ci'].forEach(id => document.getElementById(id).value = '');
+                    cargarProfesores();
+                } else alert(`❌ ${d.detail}`);
+            }
+
+            async function restablecerPassword(userId) {
+                const newPass = prompt("Ingresa el Carnet o la nueva contraseña:");
+                if (!newPass) return;
+                try {
+                    const r = await fetch(`${API_URL}/auth/usuarios/${userId}/password`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+                        body: JSON.stringify({ new_password: newPass })
+                    });
+                    const d = await r.json();
+                    if (r.ok) alert('✅ Contraseña restablecida.');
+                    else alert(`❌ Error: ${d.detail}`);
+                } catch (e) { alert('❌ Error de conexión.'); }
             }
 
             async function cargarProfesores() {
@@ -509,7 +527,10 @@
                     <td>${p.nombre} ${p.apellido}</td>
                     <td>${p.email}</td>
                     <td><span class="badge" style="background:#2980b9;color:white;padding:2px 10px;border-radius:20px">${p.nivel_asignado}</span></td>
-                    <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${p.id}, 'profesor')">🗑️</button></td>
+                    <td>
+                        <button class="btn-sm btn-rename" onclick="restablecerPassword(${p.id})">🔑 Clave</button>
+                        <button class="btn-sm btn-delete" onclick="eliminarUsuario(${p.id}, 'profesor')">🗑️ Baja</button>
+                    </td>
                 </tr>`).join('')}
                </table>`
                         : '<em style="color:#999">No hay profesores registrados aún.</em>';
@@ -543,15 +564,17 @@
             async function inscribirEstudiante() {
                 const nombre = document.getElementById('est-nombre').value.trim();
                 const apellido = document.getElementById('est-apellido').value.trim();
-                const email = document.getElementById('est-email').value.trim();
-                const password = document.getElementById('est-password').value;
+                const ci = document.getElementById('est-ci').value.trim();
                 const nivel = document.getElementById('est-nivel').value;
                 const msg = document.getElementById('est-mensaje');
 
-                if (!nombre || !email || !password) {
-                    msg.innerHTML = '<span style="color:#e74c3c">⚠️ Nombre, correo y contraseña son obligatorios.</span>';
+                if (!nombre || !apellido || !ci) {
+                    msg.innerHTML = '<span style="color:#e74c3c">⚠️ Nombre, apellido y carnet son obligatorios.</span>';
                     return;
                 }
+
+                const email = `${nombre.toLowerCase()}.${apellido.toLowerCase()}@educonnect.com`.replace(/\s+/g, '');
+                const password = ci;
                 msg.innerHTML = '<span style="color:#f39c12">⏳ Inscribiendo estudiante…</span>';
 
                 try {
@@ -566,10 +589,9 @@
                     const d = await r.json();
                     if (r.ok) {
                         msg.innerHTML = `<span style="color:#27ae60">✅ ${d.mensaje}<br>
-                            📧 Correo: <strong>${d.email}</strong></span>`;
-                        // Clear form
-                        ['est-nombre', 'est-apellido', 'est-email', 'est-password'].forEach(id =>
-                            document.getElementById(id).value = '');
+                            📧 Correo autogenerado: <strong>${d.email}</strong><br>
+                            🔑 Contraseña inicial: <strong>${password}</strong></span>`;
+                        ['est-nombre', 'est-apellido', 'est-ci'].forEach(id => document.getElementById(id).value = '');
                         cargarEstudiantes();
                     } else {
                         msg.innerHTML = `<span style="color:#e74c3c">❌ ${d.detail}</span>`;
@@ -600,7 +622,10 @@
                                 <td>${e.apellido || '—'}</td>
                                 <td>${e.email}</td>
                                 <td><span class="badge" style="background:#27ae60;color:white;padding:2px 10px;border-radius:20px">${e.nivel_asignado || 'Sin nivel'}</span></td>
-                                <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${e.id},'estudiante')">🗑️ Dar de baja</button></td>
+                                <td>
+                                    <button class="btn-sm btn-rename" onclick="restablecerPassword(${e.id})">🔑 Clave</button>
+                                    <button class="btn-sm btn-delete" onclick="eliminarUsuario(${e.id},'estudiante')">🗑️ Baja</button>
+                                </td>
                             </tr>`).join('')}
                           </table>`
                         : '<em style="color:#999">No hay estudiantes registrados aún. ¡Inscribe el primero!</em>';
