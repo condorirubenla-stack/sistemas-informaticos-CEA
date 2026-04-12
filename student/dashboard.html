@@ -391,7 +391,7 @@
         <div class="module-card" id="card-${m.id}">
             <div class="module-card-header" onclick="toggleCard(${m.id})">
                 <h3 style="display:flex;align-items:center;">
-                    <span style="color:var(--blue);margin-right:.5rem;">${i + 1}.</span>
+                    <span style="color:var(--blue);margin-right:.5rem;">${m.orden || m.id}.</span>
                     ${m.nombre}
                     ${notaBadge}
                 </h3>

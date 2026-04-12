@@ -170,7 +170,11 @@
             cont.innerHTML = modulos.map(m => `
         <div class="module-block">
             <div class="module-header" onclick="toggle(${m.id})">
-                <h3>📘 ${m.nombre}</h3><span>▾</span>
+                <h3 style="display:flex;align-items:center;">
+                   <span style="color:#FFF;background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:12px;margin-right:.6rem;font-size:0.85rem;">#${m.orden || m.id}</span>
+                   ${m.nombre}
+                </h3>
+                <span>▾</span>
             </div>
             <div class="module-body" id="body-${m.id}">
                 <div class="tema-tabs">
