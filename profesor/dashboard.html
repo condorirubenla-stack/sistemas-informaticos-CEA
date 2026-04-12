@@ -198,12 +198,23 @@
             renderTema(modId, tema);
         }
 
-        const ICONS = { teoria: '📄', video: '🎬', audio: '🔊', presentacion: '📊', evaluacion: '✅' };
+        const ICONS = { teoria: '📄', presentacion: '📊', audio: '🔊', video: '🎬', evaluacion: '✅' };
+        const ORDER = ['teoria', 'presentacion', 'audio', 'video', 'evaluacion'];
+
         function renderTema(modId, tema) {
             const items = (contenidosPorModulo[modId] || []).filter(c => c.tema_num == tema);
+            items.sort((a, b) => {
+                const ia = ORDER.indexOf(a.tipo);
+                const ib = ORDER.indexOf(b.tipo);
+                return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+            });
             document.getElementById(`tema-content-${modId}`).innerHTML = `<div class="material-grid">` +
                 items.map(c => `<div class="material-item"><label>${ICONS[c.tipo] || '📎'} ${c.tipo.toUpperCase()}</label>
-            <input id="cont-${c.id}" value="${c.url || ''}" placeholder="Enlace..."></div>`).join('') + `</div>`;
+            <input id="cont-${c.id}" value="${c.url || ''}" placeholder="Enlace..."></div>`).join('') + `
+            <div class="material-item" style="display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #bbb;background:transparent;min-height:80px;" onclick="addMaterial(${modId}, ${tema})">
+                <span style="color:#666;font-weight:700;font-size:.9rem;">➕ Agregar</span>
+            </div>
+            </div>`;
         }
 
         function setTema(modId, tema, btn) {
@@ -214,12 +225,32 @@
 
         async function guardar(modId) {
             const items = contenidosPorModulo[modId] || [];
+            let ok = 0;
             for (const c of items) {
                 const el = document.getElementById(`cont-${c.id}`);
-                if (el) await fetch(`${API_URL}/modulos/contenidos/${c.id}?url=${encodeURIComponent(el.value)}`,
-                    { method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` } });
+                if (el && el.value !== c.url) {
+                    await fetch(`${API_URL}/modulos/contenidos/${c.id}?url=${encodeURIComponent(el.value)}`,
+                        { method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` } });
+                    ok++;
+                }
             }
-            alert('✅ Material guardado correctamente.');
+            if (ok > 0) alert(`✅ ${ok} materiales guardados correctamente.`);
+            else alert('No hay cambios para guardar.');
+        }
+
+        async function addMaterial(modId, tema) {
+            const tipo = prompt("Ingresa el tipo de material (ej. Extra, Documento, PDF):");
+            if (!tipo) return;
+            const titulo = prompt("Título para este material:", tipo.toUpperCase());
+            if (!titulo) return;
+            const url = prompt("Puedes pegar el enlace ahora o dejarlo vacío y guardarlo después:");
+
+            const params = new URLSearchParams({ tipo, titulo, url: url || '', tema_num: tema });
+            await fetch(`${API_URL}/modulos/${modId}/contenidos?${params.toString()}`, {
+                method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
+            });
+            delete contenidosPorModulo[modId];
+            await loadContenidos(modId, tema);
         }
 
         function logout() { localStorage.clear(); window.location.href = '../index.html'; }

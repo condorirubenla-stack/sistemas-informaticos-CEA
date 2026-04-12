@@ -421,10 +421,16 @@
             renderTopicContent(modId, tema);
         }
 
-        const MAT = { teoria: { icon: '📄', label: 'Teoría' }, video: { icon: '🎬', label: 'Video' }, audio: { icon: '🔊', label: 'Audio' }, presentacion: { icon: '📊', label: 'Presentación' }, evaluacion: { icon: '✅', label: 'Evaluación' } };
+        const MAT = { teoria: { icon: '📄', label: 'Teoría' }, presentacion: { icon: '📊', label: 'Presentación' }, audio: { icon: '🔊', label: 'Audio' }, video: { icon: '🎬', label: 'Video' }, evaluacion: { icon: '✅', label: 'Evaluación' } };
+        const ORDER = ['teoria', 'presentacion', 'audio', 'video', 'evaluacion'];
 
         function renderTopicContent(modId, tema) {
             const items = (cacheContenidos[modId] || []).filter(c => c.tema_num == tema);
+            items.sort((a, b) => {
+                const ia = ORDER.indexOf(a.tipo);
+                const ib = ORDER.indexOf(b.tipo);
+                return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+            });
             const container = document.getElementById(`tc-${modId}`);
             const withUrl = items.filter(c => c.url && c.url.trim());
             if (!withUrl.length) {
