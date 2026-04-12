@@ -469,8 +469,13 @@
                 const d = await r.json();
                 const lista = d.profesores || [];
                 document.getElementById('profesores-lista').innerHTML = lista.length
-                    ? `<table class="inscritos-table"><tr><th>Nombre</th><th>Email</th><th>Nivel Asignado</th></tr>
-               ${lista.map(p => `<tr><td>${p.nombre} ${p.apellido}</td><td>${p.email}</td><td><span class="badge" style="background:#2980b9;color:white;padding:2px 10px;border-radius:20px">${p.nivel_asignado}</span></td></tr>`).join('')}
+                    ? `<table class="inscritos-table"><tr><th>Nombre</th><th>Email</th><th>Nivel Asignado</th><th>Acciones</th></tr>
+               ${lista.map(p => `<tr>
+                    <td>${p.nombre} ${p.apellido}</td>
+                    <td>${p.email}</td>
+                    <td><span class="badge" style="background:#2980b9;color:white;padding:2px 10px;border-radius:20px">${p.nivel_asignado}</span></td>
+                    <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${p.id}, 'profesor')">🗑️</button></td>
+                </tr>`).join('')}
                </table>`
                     : '<em style="color:#999">No hay profesores registrados aún.</em>';
             } catch (e) { }
@@ -483,7 +488,7 @@
                 const list = d.inscritos || [];
                 document.getElementById('inscritos-container').innerHTML = list.length
                     ? `<table class="inscritos-table">
-                <tr><th>Estudiante</th><th>Email</th><th>Nivel</th><th>Módulo</th><th>Estado</th><th>Nota</th></tr>
+                <tr><th>Estudiante</th><th>Email</th><th>Nivel</th><th>Módulo</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr>
                 ${list.map(i => `<tr>
                     <td><strong>${i.nombre}</strong></td>
                     <td>${i.email}</td>
@@ -491,10 +496,31 @@
                     <td>${i.modulo}</td>
                     <td><span style="color:${i.estado === 'aprobado' ? '#27ae60' : '#e67e22'}">${i.estado}</span></td>
                     <td><strong>${i.nota !== null ? i.nota : '—'}</strong></td>
+                    <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${i.id}, 'estudiante')">🗑️</button></td>
                 </tr>`).join('')}
                </table>`
                     : '<em style="color:#999">Sin progreso registrado todavía.</em>';
             } catch (e) { }
+        }
+
+        async function eliminarUsuario(userId, tipo) {
+            if (!confirm(`¿Estás seguro de que deseas eliminar este ${tipo}? Esta acción no se puede deshacer.`)) return;
+            try {
+                const r = await fetch(`${API_URL}/auth/usuarios/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (r.ok) {
+                    alert('✅ Usuario eliminado correctamente.');
+                    if (tipo === 'profesor') cargarProfesores();
+                    else cargarInscritos();
+                } else {
+                    const d = await r.json();
+                    alert(`❌ Error: ${d.detail || 'No se pudo eliminar el usuario'}`);
+                }
+            } catch (e) {
+                alert('❌ Error de conexión al servidor.');
+            }
         }
 
         function logout() {
