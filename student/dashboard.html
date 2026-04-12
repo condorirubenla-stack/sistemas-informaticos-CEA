@@ -330,9 +330,11 @@
 
     <script src="../js/api.js"></script>
     <script>
+        const TOKEN = localStorage.getItem('token');
         let nivelActual = '';
         let todosModulos = [];
         let cacheContenidos = {};
+        let misNotas = {};
 
         document.addEventListener('DOMContentLoaded', () => {
             const u = JSON.parse(localStorage.getItem('user') || '{}');
@@ -352,6 +354,18 @@
         });
 
         async function cargarTodo() {
+            try {
+                if (TOKEN) {
+                    const resNotas = await fetch(`${API_URL}/modulos/mis-notas`, {
+                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    });
+                    if (resNotas.ok) {
+                        const notesData = await resNotas.json();
+                        (notesData.progreso || []).forEach(p => misNotas[p.modulo_id] = p);
+                    }
+                }
+            } catch (e) { }
+
             const r = await fetch(`${API_URL}/modulos/`);
             const d = await r.json();
             todosModulos = d.modulos || [];
@@ -368,11 +382,19 @@
         function renderModulos() {
             const lista = todosModulos.filter(m => m.nivel === nivelActual);
             const cont = document.getElementById('modulos-list');
-            if (!lista.length) { cont.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Aún no hay módulos en este nivel.</p></div>`; return; }
-            cont.innerHTML = lista.map((m, i) => `
+            cont.innerHTML = lista.map((m, i) => {
+                const notaObj = misNotas[m.id];
+                const notaBadge = notaObj && notaObj.nota !== null
+                    ? `<span style="background:${notaObj.estado === 'aprobado' ? '#27ae60' : '#e67e22'};color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;margin-left:10px;">Nota: ${notaObj.nota}</span>`
+                    : '';
+                return `
         <div class="module-card" id="card-${m.id}">
             <div class="module-card-header" onclick="toggleCard(${m.id})">
-                <h3><span style="color:var(--blue);margin-right:.5rem;">${i + 1}.</span>${m.nombre}</h3>
+                <h3 style="display:flex;align-items:center;">
+                    <span style="color:var(--blue);margin-right:.5rem;">${i + 1}.</span>
+                    ${m.nombre}
+                    ${notaBadge}
+                </h3>
                 <span class="expand-icon">▼</span>
             </div>
             <div class="module-body">
@@ -381,7 +403,8 @@
                 </div>
                 <div id="tc-${m.id}"><div class="empty-state"><div class="icon">📡</div><p>Cargando...</p></div></div>
             </div>
-        </div>`).join('');
+        </div>`;
+            }).join('');
         }
 
         async function toggleCard(id) {
