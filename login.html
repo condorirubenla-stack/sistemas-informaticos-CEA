@@ -112,32 +112,37 @@
                 formData.append("username", email);
                 formData.append("password", password);
 
-                // When we implement backend, this will fetch token:
-                /*
-                const res = await fetch(API_URL + "/token", {
+                const res = await fetch(API_URL + "/auth/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: formData
                 });
+
                 const data = await res.json();
-                if(res.ok) {
+
+                if (res.ok) {
                     localStorage.setItem("token", data.access_token);
-                    localStorage.setItem("user", JSON.stringify(data.user));
-                    if(data.user.rol === "administrador") window.location.href = "admin/dashboard.html";
-                    else window.location.href = "student/dashboard.html";
+                    // Store user data returning from backend (rol, nombre, nivel_asignado)
+                    localStorage.setItem("user", JSON.stringify({
+                        nombre: data.nombre,
+                        rol: data.rol,
+                        nivel_asignado: data.nivel_asignado
+                    }));
+
+                    // Role-based redirection
+                    if (data.rol === "administrador") {
+                        window.location.href = "admin/dashboard.html";
+                    } else if (data.rol === "profesor") {
+                        window.location.href = "profesor/dashboard.html";
+                    } else {
+                        window.location.href = "student/dashboard.html";
+                    }
                 } else {
-                    alert(data.detail);
-                }
-                */
-                // For now, mock navigation to admin or student based on email
-                if (email.includes("admin")) {
-                    window.location.href = "admin/dashboard.html";
-                } else {
-                    window.location.href = "student/dashboard.html";
+                    alert(data.detail || "Error al iniciar sesión");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Error de conexión");
+                alert("Error de conexión con el servidor");
             }
         });
     </script>
