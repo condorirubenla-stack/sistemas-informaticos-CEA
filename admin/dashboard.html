@@ -305,48 +305,83 @@
             <div id="profesores-lista" style="margin-top:1rem;"></div>
         </div>
 
+        <!-- ── INSCRIBIR ESTUDIANTE ──────────────── -->
+        <div class="section-title">🎓 Inscripción de Estudiantes</div>
+        <div
+            style="background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:1rem;">
+            <p style="color:#555;margin-bottom:1rem;font-size:.93rem;">
+                El administrador crea la cuenta del estudiante con su <strong>correo</strong> y
+                <strong>contraseña</strong> inicial.
+                El estudiante podrá cambiarla luego desde su perfil.
+            </p>
+            <div class="form-row">
+                <input id="est-nombre" placeholder="Nombre *" />
+                <input id="est-apellido" placeholder="Apellido *" />
+                <input id="est-email" placeholder="Correo institucional *" type="email" />
+                <input id="est-password" placeholder="Contraseña inicial *" type="password" />
+                <select id="est-nivel">
+                    <option value="Técnico Básico">Técnico Básico</option>
+                    <option value="Técnico Auxiliar">Técnico Auxiliar</option>
+                    <option value="Técnico Medio I">Técnico Medio I</option>
+                    <option value="Técnico Medio II">Técnico Medio II</option>
+                </select>
+                <button class="btn-login" onclick="inscribirEstudiante()" style="background:#2ecc71;">
+                    ✅ Inscribir Estudiante
+                </button>
+            </div>
+            <div id="est-mensaje" style="margin-top:.8rem;font-size:.9rem;"></div>
+        </div>
+
+        <!-- ── LISTA DE ESTUDIANTES ───────────────── -->
+        <div class="section-title">👥 Estudiantes Registrados</div>
+        <div
+            style="background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow-x:auto;margin-bottom:1rem;">
+            <div id="estudiantes-container">
+                <em style="color:#999">Cargando lista de estudiantes…</em>
+            </div>
+        </div>
+
         <!-- ── INSCRITOS / NOTAS ───────────────── -->
-        <div class="section-title">📊 Estudiantes Inscritos y Notas</div>
+        <div class="section-title">📊 Progreso y Notas</div>
         <div
             style="background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow-x:auto;">
             <div id="inscritos-container"><em>Sin registros de progreso aún.</em></div>
         </div>
 
-    </main>
 
-    <script src="../js/api.js"></script>
-    <script>
-        const TOKEN = localStorage.getItem('token');
-        let nivelActual = 'Técnico Básico';
-        let todosModulos = [];
+        <script src="../js/api.js"></script>
+        <script>
+            const TOKEN = localStorage.getItem('token');
+            let nivelActual = 'Técnico Básico';
+            let todosModulos = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const u = JSON.parse(localStorage.getItem('user') || '{}');
-            if (u.nombre) document.getElementById('user-name').textContent = u.nombre + ' (Admin)';
-            cargarModulos(); cargarProfesores(); cargarInscritos();
-        });
+            document.addEventListener('DOMContentLoaded', () => {
+                const u = JSON.parse(localStorage.getItem('user') || '{}');
+                if (u.nombre) document.getElementById('user-name').textContent = u.nombre + ' (Admin)';
+                cargarModulos(); cargarProfesores(); cargarInscritos(); cargarEstudiantes();
+            });
 
-        function setNivel(nivel, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            nivelActual = nivel;
-            renderModulos();
-        }
-
-        async function cargarModulos() {
-            try {
-                const r = await fetch(`${API_URL}/modulos/`);
-                const d = await r.json();
-                todosModulos = d.modulos || [];
+            function setNivel(nivel, btn) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                nivelActual = nivel;
                 renderModulos();
-            } catch (e) { document.getElementById('modulos-container').innerHTML = '<p style="color:red">Error cargando módulos.</p>'; }
-        }
+            }
 
-        function renderModulos() {
-            const cont = document.getElementById('modulos-container');
-            const filtrados = todosModulos.filter(m => m.nivel === nivelActual);
-            if (!filtrados.length) { cont.innerHTML = '<p style="color:#999;text-align:center;padding:2rem;">Sin módulos para este nivel. Crea uno con el botón de arriba.</p>'; return; }
-            cont.innerHTML = filtrados.map(m => `
+            async function cargarModulos() {
+                try {
+                    const r = await fetch(`${API_URL}/modulos/`);
+                    const d = await r.json();
+                    todosModulos = d.modulos || [];
+                    renderModulos();
+                } catch (e) { document.getElementById('modulos-container').innerHTML = '<p style="color:red">Error cargando módulos.</p>'; }
+            }
+
+            function renderModulos() {
+                const cont = document.getElementById('modulos-container');
+                const filtrados = todosModulos.filter(m => m.nivel === nivelActual);
+                if (!filtrados.length) { cont.innerHTML = '<p style="color:#999;text-align:center;padding:2rem;">Sin módulos para este nivel. Crea uno con el botón de arriba.</p>'; return; }
+                cont.innerHTML = filtrados.map(m => `
         <div class="module-block" id="block-${m.id}">
             <div class="module-header" onclick="toggleModule(${m.id})">
                 <h3>📘 ${m.nombre}</h3>
@@ -368,108 +403,108 @@
             </div>
         </div>
     `).join('');
-        }
-
-        async function toggleModule(id) {
-            const body = document.getElementById(`body-${id}`);
-            body.classList.toggle('open');
-            if (body.classList.contains('open')) await cargarContenidosModulo(id, 1);
-        }
-
-        let contenidosPorModulo = {};
-
-        async function cargarContenidosModulo(modId, tema) {
-            if (!contenidosPorModulo[modId]) {
-                const r = await fetch(`${API_URL}/modulos/${modId}/contenidos`);
-                const d = await r.json();
-                contenidosPorModulo[modId] = d.contenidos || [];
             }
-            renderTema(modId, tema);
-        }
 
-        function setTema(modId, tema, btn) {
-            document.querySelectorAll(`#tema-tabs-${modId} .tema-tab`).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if (!contenidosPorModulo[modId]) { cargarContenidosModulo(modId, tema); return; }
-            renderTema(modId, tema);
-        }
+            async function toggleModule(id) {
+                const body = document.getElementById(`body-${id}`);
+                body.classList.toggle('open');
+                if (body.classList.contains('open')) await cargarContenidosModulo(id, 1);
+            }
 
-        const ICONS = { teoria: '📄', video: '🎬', audio: '🔊', presentacion: '📊', evaluacion: '✅' };
-        function renderTema(modId, tema) {
-            const cont = document.getElementById(`tema-content-${modId}`);
-            const items = (contenidosPorModulo[modId] || []).filter(c => c.tema_num == tema);
-            if (!items.length) { cont.innerHTML = '<p style="color:#999">Sin materiales para este tema.</p>'; return; }
-            cont.innerHTML = `<div class="material-grid">` +
-                items.map(c => `
+            let contenidosPorModulo = {};
+
+            async function cargarContenidosModulo(modId, tema) {
+                if (!contenidosPorModulo[modId]) {
+                    const r = await fetch(`${API_URL}/modulos/${modId}/contenidos`);
+                    const d = await r.json();
+                    contenidosPorModulo[modId] = d.contenidos || [];
+                }
+                renderTema(modId, tema);
+            }
+
+            function setTema(modId, tema, btn) {
+                document.querySelectorAll(`#tema-tabs-${modId} .tema-tab`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (!contenidosPorModulo[modId]) { cargarContenidosModulo(modId, tema); return; }
+                renderTema(modId, tema);
+            }
+
+            const ICONS = { teoria: '📄', video: '🎬', audio: '🔊', presentacion: '📊', evaluacion: '✅' };
+            function renderTema(modId, tema) {
+                const cont = document.getElementById(`tema-content-${modId}`);
+                const items = (contenidosPorModulo[modId] || []).filter(c => c.tema_num == tema);
+                if (!items.length) { cont.innerHTML = '<p style="color:#999">Sin materiales para este tema.</p>'; return; }
+                cont.innerHTML = `<div class="material-grid">` +
+                    items.map(c => `
             <div class="material-item">
                 <label>${ICONS[c.tipo] || '📎'} ${c.tipo.toUpperCase()}</label>
                 <input type="text" id="cont-${c.id}" value="${c.url || ''}" placeholder="Pega el enlace aquí...">
             </div>`).join('') + `</div>`;
-        }
+            }
 
-        async function guardarModulo(modId) {
-            const items = contenidosPorModulo[modId] || [];
-            let ok = 0;
-            for (const c of items) {
-                const el = document.getElementById(`cont-${c.id}`);
-                if (!el) continue;
-                const r = await fetch(`${API_URL}/modulos/contenidos/${c.id}?url=${encodeURIComponent(el.value)}`, {
+            async function guardarModulo(modId) {
+                const items = contenidosPorModulo[modId] || [];
+                let ok = 0;
+                for (const c of items) {
+                    const el = document.getElementById(`cont-${c.id}`);
+                    if (!el) continue;
+                    const r = await fetch(`${API_URL}/modulos/contenidos/${c.id}?url=${encodeURIComponent(el.value)}`, {
+                        method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` }
+                    });
+                    if (r.ok) ok++;
+                }
+                alert(`✅ ${ok} materiales guardados correctamente.`);
+            }
+
+            async function renombrarModulo(id, actual) {
+                const nuevo = prompt(`Nuevo nombre para el módulo:`, actual);
+                if (!nuevo || nuevo === actual) return;
+                await fetch(`${API_URL}/modulos/${id}?nombre=${encodeURIComponent(nuevo)}`, {
                     method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` }
                 });
-                if (r.ok) ok++;
+                await cargarModulos();
             }
-            alert(`✅ ${ok} materiales guardados correctamente.`);
-        }
 
-        async function renombrarModulo(id, actual) {
-            const nuevo = prompt(`Nuevo nombre para el módulo:`, actual);
-            if (!nuevo || nuevo === actual) return;
-            await fetch(`${API_URL}/modulos/${id}?nombre=${encodeURIComponent(nuevo)}`, {
-                method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` }
-            });
-            await cargarModulos();
-        }
+            async function eliminarModulo(id) {
+                if (!confirm('¿Seguro que deseas eliminar este módulo y todo su contenido?')) return;
+                await fetch(`${API_URL}/modulos/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN}` } });
+                await cargarModulos();
+            }
 
-        async function eliminarModulo(id) {
-            if (!confirm('¿Seguro que deseas eliminar este módulo y todo su contenido?')) return;
-            await fetch(`${API_URL}/modulos/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN}` } });
-            await cargarModulos();
-        }
+            async function crearModulo() {
+                const nombre = prompt(`Nombre del nuevo módulo para ${nivelActual}:`);
+                if (!nombre) return;
+                await fetch(`${API_URL}/modulos/?nombre=${encodeURIComponent(nombre)}&nivel=${encodeURIComponent(nivelActual)}`, {
+                    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
+                });
+                alert('✅ Módulo creado con 4 temas.');
+                await cargarModulos();
+            }
 
-        async function crearModulo() {
-            const nombre = prompt(`Nombre del nuevo módulo para ${nivelActual}:`);
-            if (!nombre) return;
-            await fetch(`${API_URL}/modulos/?nombre=${encodeURIComponent(nombre)}&nivel=${encodeURIComponent(nivelActual)}`, {
-                method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
-            });
-            alert('✅ Módulo creado con 4 temas.');
-            await cargarModulos();
-        }
-
-        async function crearProfesor() {
-            const data = {
-                nombre: document.getElementById('prof-nombre').value,
-                apellido: document.getElementById('prof-apellido').value,
-                email: document.getElementById('prof-email').value,
-                password: document.getElementById('prof-password').value,
-                nivel_asignado: document.getElementById('prof-nivel').value,
-            };
-            if (!data.nombre || !data.email || !data.password) { alert('Completa todos los campos.'); return; }
-            const r = await fetch(`${API_URL}/auth/register-profesor?nombre=${encodeURIComponent(data.nombre)}&apellido=${encodeURIComponent(data.apellido)}&email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}&nivel_asignado=${encodeURIComponent(data.nivel_asignado)}`, {
-                method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
-            });
-            const d = await r.json();
-            if (r.ok) { alert(`✅ ${d.mensaje}`); cargarProfesores(); }
-            else alert(`❌ ${d.detail}`);
-        }
-
-        async function cargarProfesores() {
-            try {
-                const r = await fetch(`${API_URL}/auth/profesores`);
+            async function crearProfesor() {
+                const data = {
+                    nombre: document.getElementById('prof-nombre').value,
+                    apellido: document.getElementById('prof-apellido').value,
+                    email: document.getElementById('prof-email').value,
+                    password: document.getElementById('prof-password').value,
+                    nivel_asignado: document.getElementById('prof-nivel').value,
+                };
+                if (!data.nombre || !data.email || !data.password) { alert('Completa todos los campos.'); return; }
+                const r = await fetch(`${API_URL}/auth/register-profesor?nombre=${encodeURIComponent(data.nombre)}&apellido=${encodeURIComponent(data.apellido)}&email=${encodeURIComponent(data.email)}&password=${encodeURIComponent(data.password)}&nivel_asignado=${encodeURIComponent(data.nivel_asignado)}`, {
+                    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }
+                });
                 const d = await r.json();
-                const lista = d.profesores || [];
-                document.getElementById('profesores-lista').innerHTML = lista.length
-                    ? `<table class="inscritos-table"><tr><th>Nombre</th><th>Email</th><th>Nivel Asignado</th><th>Acciones</th></tr>
+                if (r.ok) { alert(`✅ ${d.mensaje}`); cargarProfesores(); }
+                else alert(`❌ ${d.detail}`);
+            }
+
+            async function cargarProfesores() {
+                try {
+                    const r = await fetch(`${API_URL}/auth/profesores`);
+                    const d = await r.json();
+                    const lista = d.profesores || [];
+                    document.getElementById('profesores-lista').innerHTML = lista.length
+                        ? `<table class="inscritos-table"><tr><th>Nombre</th><th>Email</th><th>Nivel Asignado</th><th>Acciones</th></tr>
                ${lista.map(p => `<tr>
                     <td>${p.nombre} ${p.apellido}</td>
                     <td>${p.email}</td>
@@ -477,17 +512,17 @@
                     <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${p.id}, 'profesor')">🗑️</button></td>
                 </tr>`).join('')}
                </table>`
-                    : '<em style="color:#999">No hay profesores registrados aún.</em>';
-            } catch (e) { }
-        }
+                        : '<em style="color:#999">No hay profesores registrados aún.</em>';
+                } catch (e) { }
+            }
 
-        async function cargarInscritos() {
-            try {
-                const r = await fetch(`${API_URL}/modulos/admin/inscritos`);
-                const d = await r.json();
-                const list = d.inscritos || [];
-                document.getElementById('inscritos-container').innerHTML = list.length
-                    ? `<table class="inscritos-table">
+            async function cargarInscritos() {
+                try {
+                    const r = await fetch(`${API_URL}/modulos/admin/inscritos`);
+                    const d = await r.json();
+                    const list = d.inscritos || [];
+                    document.getElementById('inscritos-container').innerHTML = list.length
+                        ? `<table class="inscritos-table">
                 <tr><th>Estudiante</th><th>Email</th><th>Nivel</th><th>Módulo</th><th>Estado</th><th>Nota</th><th>Acciones</th></tr>
                 ${list.map(i => `<tr>
                     <td><strong>${i.nombre}</strong></td>
@@ -499,35 +534,107 @@
                     <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${i.id}, 'estudiante')">🗑️</button></td>
                 </tr>`).join('')}
                </table>`
-                    : '<em style="color:#999">Sin progreso registrado todavía.</em>';
-            } catch (e) { }
-        }
-
-        async function eliminarUsuario(userId, tipo) {
-            if (!confirm(`¿Estás seguro de que deseas eliminar este ${tipo}? Esta acción no se puede deshacer.`)) return;
-            try {
-                const r = await fetch(`${API_URL}/auth/usuarios/${userId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${TOKEN}` }
-                });
-                if (r.ok) {
-                    alert('✅ Usuario eliminado correctamente.');
-                    if (tipo === 'profesor') cargarProfesores();
-                    else cargarInscritos();
-                } else {
-                    const d = await r.json();
-                    alert(`❌ Error: ${d.detail || 'No se pudo eliminar el usuario'}`);
-                }
-            } catch (e) {
-                alert('❌ Error de conexión al servidor.');
+                        : '<em style="color:#999">Sin progreso registrado todavía.</em>';
+                } catch (e) { }
             }
-        }
 
-        function logout() {
-            localStorage.removeItem('token'); localStorage.removeItem('user');
-            window.location.href = '../index.html';
-        }
-    </script>
+
+            // ── INSCRIBIR NUEVO ESTUDIANTE ──────────────────────────────
+            async function inscribirEstudiante() {
+                const nombre = document.getElementById('est-nombre').value.trim();
+                const apellido = document.getElementById('est-apellido').value.trim();
+                const email = document.getElementById('est-email').value.trim();
+                const password = document.getElementById('est-password').value;
+                const nivel = document.getElementById('est-nivel').value;
+                const msg = document.getElementById('est-mensaje');
+
+                if (!nombre || !email || !password) {
+                    msg.innerHTML = '<span style="color:#e74c3c">⚠️ Nombre, correo y contraseña son obligatorios.</span>';
+                    return;
+                }
+                msg.innerHTML = '<span style="color:#f39c12">⏳ Inscribiendo estudiante…</span>';
+
+                try {
+                    const r = await fetch(`${API_URL}/auth/register-estudiante`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${TOKEN}`
+                        },
+                        body: JSON.stringify({ nombre, apellido, email, password, nivel_asignado: nivel })
+                    });
+                    const d = await r.json();
+                    if (r.ok) {
+                        msg.innerHTML = `<span style="color:#27ae60">✅ ${d.mensaje}<br>
+                            📧 Correo: <strong>${d.email}</strong></span>`;
+                        // Clear form
+                        ['est-nombre', 'est-apellido', 'est-email', 'est-password'].forEach(id =>
+                            document.getElementById(id).value = '');
+                        cargarEstudiantes();
+                    } else {
+                        msg.innerHTML = `<span style="color:#e74c3c">❌ ${d.detail}</span>`;
+                    }
+                } catch (e) {
+                    msg.innerHTML = '<span style="color:#e74c3c">❌ Error de conexión al servidor.</span>';
+                }
+            }
+
+            // ── CARGAR LISTA DE ESTUDIANTES ─────────────────────────────
+            async function cargarEstudiantes() {
+                try {
+                    const r = await fetch(`${API_URL}/auth/estudiantes`, {
+                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    });
+                    const d = await r.json();
+                    const lista = d.estudiantes || [];
+                    document.getElementById('estudiantes-container').innerHTML = lista.length
+                        ? `<table class="inscritos-table">
+                            <tr>
+                                <th>Nombre</th><th>Apellido</th>
+                                <th>Correo Institucional</th>
+                                <th>Nivel Asignado</th>
+                                <th>Acciones</th>
+                            </tr>
+                            ${lista.map(e => `<tr>
+                                <td><strong>${e.nombre}</strong></td>
+                                <td>${e.apellido || '—'}</td>
+                                <td>${e.email}</td>
+                                <td><span class="badge" style="background:#27ae60;color:white;padding:2px 10px;border-radius:20px">${e.nivel_asignado || 'Sin nivel'}</span></td>
+                                <td><button class="btn-sm btn-delete" onclick="eliminarUsuario(${e.id},'estudiante')">🗑️ Dar de baja</button></td>
+                            </tr>`).join('')}
+                          </table>`
+                        : '<em style="color:#999">No hay estudiantes registrados aún. ¡Inscribe el primero!</em>';
+                } catch (e) {
+                    document.getElementById('estudiantes-container').innerHTML =
+                        '<em style="color:#e74c3c">Error cargando estudiantes.</em>';
+                }
+            }
+
+            async function eliminarUsuario(userId, tipo) {
+                if (!confirm(`¿Estás seguro de que deseas eliminar este ${tipo}? Esta acción no se puede deshacer.`)) return;
+                try {
+                    const r = await fetch(`${API_URL}/auth/usuarios/${userId}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    });
+                    if (r.ok) {
+                        alert('✅ Usuario eliminado correctamente.');
+                        if (tipo === 'profesor') cargarProfesores();
+                        else { cargarEstudiantes(); cargarInscritos(); }
+                    } else {
+                        const d = await r.json();
+                        alert(`❌ Error: ${d.detail || 'No se pudo eliminar el usuario'}`);
+                    }
+                } catch (e) {
+                    alert('❌ Error de conexión al servidor.');
+                }
+            }
+
+            function logout() {
+                localStorage.removeItem('token'); localStorage.removeItem('user');
+                window.location.href = '../index.html';
+            }
+        </script>
 </body>
 
 </html>
