@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduConnect Ruben - LMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- Link para instalar a pantalla -->
+<link rel="manifest" href="/instalar/manifest.json">
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <img src="images/logo.png" alt="EduConnect Logo" class="logo-img">
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="active">Inicio</a>
+            <a href="login.html" class="btn-login">Iniciar Sesión</a>
+        </nav>
+    </header>
+
+    <main class="hero">
+        <div class="hero-content">
+            <h1>Bienvenido a la Plataforma Educativa</h1>
+            <p>Aprende Sistemas Informáticos con la mejor estructura académica dividida por niveles.</p>
+        </div>
+    </main>
+
+    <section class="levels-section" id="levels-container">
+        <!-- Levels and Modules will be injected here via JS -->
+    </section>
+
+    <script src="js/api.js"></script>
+    <script src="js/public.js"></script>
+
+
+
+<!-- script para instalar a pantalla -->
+<script src="/instalar/pwa.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduConnect Ruben - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .login-container {
+            min-height: 80vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box img {
+            height: 60px;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <a href="index.html">
+                <img src="images/logo.png" alt="EduConnect Logo" class="logo-img"
+                    onerror="this.src='https://placehold.co/200x80/34495e/FFF?text=EduConnect'">
+            </a>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="login.html" class="btn-login active">Iniciar Sesión</a>
+        </nav>
+    </header>
+
+    <main class="login-container">
+        <div class="login-box">
+            <img src="images/logo.png" alt="Logo" onerror="this.style.display='none'">
+            <h2>Bienvenido</h2>
+            <p style="color: var(--text-light); margin-bottom: 2rem;">Ingresa a tu cuenta EduConnect</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Usuario (Email)</label>
+                    <input type="email" id="email" required placeholder="nombre.apellido@educonnect.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña (Carnet)</label>
+                    <input type="password" id="password" required placeholder="Ingresa tu contraseña">
+                </div>
+                <button type="submit" class="btn-submit">Ingresar</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append("username", email);
+                formData.append("password", password);
+
+                // When we implement backend, this will fetch token:
+                /*
+                const res = await fetch(API_URL + "/token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: formData
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    localStorage.setItem("token", data.access_token);
+                    localStorage.setItem("user", JSON.stringify(data.user));
+                    if(data.user.rol === "administrador") window.location.href = "admin/dashboard.html";
+                    else window.location.href = "student/dashboard.html";
+                } else {
+                    alert(data.detail);
+                }
+                */
+                // For now, mock navigation to admin or student based on email
+                if (email.includes("admin")) {
+                    window.location.href = "admin/dashboard.html";
+                } else {
+                    window.location.href = "student/dashboard.html";
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error de conexión");
+            }
+        });
+    </script>
+</body>
+
+</html>
