@@ -100,12 +100,43 @@
         </div>
     </main>
 
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="js/api.js"></script>
     <script>
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
+        // Health check on load
+        window.addEventListener('load', async () => {
+            try {
+                const res = await fetch(API_URL + "/");
+                if (res.ok) {
+                    console.log("Backend online");
+                }
+            } catch (e) {
+                showToast("El servidor se está iniciando, por favor espera...", "warning");
+            }
+        });
+
         document.getElementById("login-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
+            const btn = e.target.querySelector('button');
+
+            const originalText = btn.textContent;
+            btn.textContent = "Verificando...";
+            btn.disabled = true;
 
             try {
                 const formData = new URLSearchParams();
@@ -121,31 +152,36 @@
                 const data = await res.json();
 
                 if (res.ok) {
+                    showToast("¡Bienvenido! Redirigiendo...", "success");
                     localStorage.setItem("token", data.access_token);
-                    // Store user data returning from backend (rol, nombre, nivel_asignado)
                     localStorage.setItem("user", JSON.stringify({
                         nombre: data.nombre,
                         rol: data.rol,
                         nivel_asignado: data.nivel_asignado
                     }));
 
-                    // Role-based redirection
-                    if (data.rol === "administrador") {
-                        window.location.href = "admin/dashboard.html";
-                    } else if (data.rol === "profesor") {
-                        window.location.href = "profesor/dashboard.html";
-                    } else {
-                        window.location.href = "student/dashboard.html";
-                    }
+                    setTimeout(() => {
+                        if (data.rol === "administrador") {
+                            window.location.href = "admin/dashboard.html";
+                        } else if (data.rol === "profesor") {
+                            window.location.href = "profesor/dashboard.html";
+                        } else {
+                            window.location.href = "student/dashboard.html";
+                        }
+                    }, 1000);
                 } else {
-                    alert(data.detail || "Error al iniciar sesión");
+                    showToast(data.detail || "Error al iniciar sesión", "error");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Error de conexión con el servidor");
+                showToast("Error de conexión con el servidor", "error");
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
             }
         });
     </script>
+
 </body>
 
 </html>
