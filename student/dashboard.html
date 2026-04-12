@@ -315,11 +315,8 @@
         <p>Selecciona un nivel y explora tus módulos de estudio</p>
     </div>
 
-    <div class="level-tabs">
-        <button class="level-tab active" onclick="setNivel('Técnico Básico',this)">🎯 Técnico Básico</button>
-        <button class="level-tab" onclick="setNivel('Técnico Auxiliar',this)">📐 Técnico Auxiliar</button>
-        <button class="level-tab" onclick="setNivel('Técnico Medio I',this)">💡 Técnico Medio I</button>
-        <button class="level-tab" onclick="setNivel('Técnico Medio II',this)">🚀 Técnico Medio II</button>
+    <div class="level-tabs" id="level-tabs-container">
+        <!-- Se inyecta el nivel asignado aquí -->
     </div>
 
     <div class="content">
@@ -333,7 +330,7 @@
 
     <script src="../js/api.js"></script>
     <script>
-        let nivelActual = 'Técnico Básico';
+        let nivelActual = '';
         let todosModulos = [];
         let cacheContenidos = {};
 
@@ -343,6 +340,13 @@
                 document.getElementById('user-name').textContent = u.nombre;
                 document.getElementById('avatar').textContent = u.nombre[0].toUpperCase();
                 document.getElementById('welcome-msg').textContent = `¡Hola, ${u.nombre}! Aquí tu aprendizaje`;
+
+                // Set the assigned level and render the single tab
+                nivelActual = u.nivel_asignado || 'Técnico Básico';
+                const tabsContainer = document.getElementById('level-tabs-container');
+                if (tabsContainer) {
+                    tabsContainer.innerHTML = `<button class="level-tab active" style="cursor:default">🎯 ${nivelActual}</button>`;
+                }
             }
             cargarTodo();
         });
