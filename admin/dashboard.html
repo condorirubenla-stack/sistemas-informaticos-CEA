@@ -395,7 +395,7 @@
                 <div id="tema-content-${m.id}">Cargando...</div>
                 <div class="module-actions">
                     <button class="btn-sm btn-save" onclick="guardarModulo(${m.id})">💾 Guardar URLs</button>
-                    <button class="btn-sm btn-rename" onclick="renombrarModulo(${m.id},'${m.nombre}')">✏️ Renombrar</button>
+                    <button class="btn-sm btn-rename" onclick="renombrarModulo(${m.id},'${m.nombre}', '${m.orden || 0}')">✏️ Editar</button>
                     <button class="btn-sm btn-delete" onclick="eliminarModulo(${m.id})">🗑️ Eliminar</button>
                 </div>
             </div>
@@ -454,10 +454,19 @@
                 alert(`✅ ${ok} materiales guardados correctamente.`);
             }
 
-            async function renombrarModulo(id, actual) {
-                const nuevo = prompt(`Nuevo nombre para el módulo:`, actual);
-                if (!nuevo || nuevo === actual) return;
-                await fetch(`${API_URL}/modulos/${id}?nombre=${encodeURIComponent(nuevo)}`, {
+            async function renombrarModulo(id, actualNombre, actualOrden) {
+                const nuevoNombre = prompt('Nuevo nombre para el módulo:', actualNombre);
+                if (nuevoNombre === null) return; // cancelado
+                const nuevoOrdenStr = prompt('Nuevo número (orden) para el módulo:', actualOrden);
+                if (nuevoOrdenStr === null) return; // cancelado
+
+                const params = new URLSearchParams();
+                if (nuevoNombre && nuevoNombre !== actualNombre) params.append('nombre', nuevoNombre);
+                if (nuevoOrdenStr && nuevoOrdenStr !== actualOrden) params.append('orden', parseInt(nuevoOrdenStr));
+
+                if (params.toString() === '') return;
+
+                await fetch(`${API_URL}/modulos/${id}?${params.toString()}`, {
                     method: 'PUT', headers: { Authorization: `Bearer ${TOKEN}` }
                 });
                 await cargarModulos();
