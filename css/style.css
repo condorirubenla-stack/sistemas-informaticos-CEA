@@ -37,7 +37,7 @@ body {
 }
 
 .logo-img {
-    height: 110px;
+    height: 90px;
     max-width: 220px;
     object-fit: contain;
     filter: drop-shadow(0 0 15px rgba(52, 152, 219, 0.4));
