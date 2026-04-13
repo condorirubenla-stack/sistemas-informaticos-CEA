@@ -213,7 +213,7 @@
                 return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
             });
             document.getElementById(`tema-content-${modId}`).innerHTML = `<div class="material-grid">` +
-                items.map(c => `<div class="material-item"><label>${ICONS[c.tipo] || '📎'} ${c.tipo.toUpperCase()}</label>
+                items.map(c => `<div class="material-item"><label>${ICONS[c.tipo] || '📎'} ${c.tipo.toUpperCase()} <span style="float:right;cursor:pointer;color:#e74c3c;padding:0 5px;" onclick="eliminarMaterial(${c.id},${modId},${tema})" title="Eliminar material">✖</span></label>
             <input id="cont-${c.id}" value="${c.url || ''}" placeholder="Enlace..."></div>`).join('') + `
             <div class="material-item" style="display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #bbb;background:transparent;min-height:80px;" onclick="addMaterial(${modId}, ${tema})">
                 <span style="color:#666;font-weight:700;font-size:.9rem;">➕ Agregar</span>
@@ -255,6 +255,19 @@
             });
             delete contenidosPorModulo[modId];
             await loadContenidos(modId, tema);
+        }
+
+        async function eliminarMaterial(id, modId, tema) {
+            if (!confirm('¿Seguro que deseas eliminar este material permanentemente?')) return;
+            try {
+                const r = await fetch(`${API_URL}/modulos/contenidos/${id}`, {
+                    method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN}` }
+                });
+                if (r.ok) {
+                    delete contenidosPorModulo[modId];
+                    await loadContenidos(modId, tema);
+                } else alert('Error al eliminar');
+            } catch (e) { alert('Error de conexión'); }
         }
 
         function logout() { localStorage.clear(); window.location.href = '../index.html'; }
