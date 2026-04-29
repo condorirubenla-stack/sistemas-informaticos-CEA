@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+psycopg2-binary
+python-dotenv
+python-jose[cryptography]
+python-multipart
+openpyxl
+passlib[bcrypt]
+bcrypt
